@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fromage + Formaggio Combination Tracker</title>
+<style>
+  :root { color-scheme: light dark; --bg: light-dark(#f7f5ef,#171a18); --panel: light-dark(#ffffff,#222724); --text: light-dark(#222822,#f0f2ed); --muted: light-dark(#5e685f,#aab4aa); --border: light-dark(#d9ded5,#414941); --accent: light-dark(#426b4d,#9ac7a4); --accent-text: light-dark(#ffffff,#17251b); --soft: light-dark(#edf3eb,#29372c); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  #app { min-height: 100vh; background: var(--bg); }
+  header { padding: 28px clamp(16px,4vw,44px) 20px; border-bottom: 1px solid var(--border); }
+  .eyebrow { color: var(--muted); text-transform: uppercase; letter-spacing: .12em; font-size: 11px; font-weight: 750; }
+  h1 { margin: 7px 0 8px; font-size: clamp(25px,4vw,36px); line-height: 1.12; letter-spacing: -.035em; }
+  .intro { max-width: 760px; color: var(--muted); margin: 0; }
+  main { padding: 22px clamp(16px,4vw,44px) 40px; max-width: 1450px; margin: auto; }
+  .summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .stat .number { font-size: clamp(22px,3vw,30px); font-weight: 780; letter-spacing: -.03em; }
+  .stat .label { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .progress-track { height: 8px; border-radius: 99px; overflow: hidden; background: var(--border); margin-top: 11px; }
+  .progress-fill { height: 100%; width: 0; background: var(--accent); transition: width .15s ease; }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 18px 0; }
+  .tabs { display: flex; gap: 6px; padding: 5px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+  button, input, select { font: inherit; }
+  button { cursor: pointer; border: 1px solid var(--border); color: var(--text); background: var(--panel); border-radius: 9px; padding: 9px 12px; }
+  button:hover { border-color: var(--accent); }
+  .tab { border: 0; background: transparent; font-weight: 700; }
+  .tab[aria-selected="true"] { background: var(--soft); color: var(--text); }
+  .primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 700; }
+  .filter { display: flex; gap: 8px; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px 11px; background: var(--panel); }
+  .filter input { accent-color: var(--accent); width: 17px; height: 17px; }
+  .search { flex: 1 1 190px; min-width: 150px; border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 9px; padding: 10px 12px; }
+  .section-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin: 22px 0 12px; }
+  h2 { font-size: 20px; margin: 0; letter-spacing: -.02em; }
+  .small { color: var(--muted); font-size: 12px; }
+  .list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  .item { display: flex; align-items: flex-start; gap: 11px; padding: 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel); min-width: 0; }
+  .item.done { background: var(--soft); }
+  .item input { margin: 3px 0 0; width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--accent); cursor: pointer; }
+  .item-main { min-width: 0; flex: 1; }
+  .item-title { font-weight: 650; overflow-wrap: anywhere; }
+  .item.done .item-title { text-decoration: line-through; opacity: .7; }
+  .item-number { font-size: 11px; color: var(--muted); margin-right: 6px; font-variant-numeric: tabular-nums; }
+  .empty { padding: 30px; text-align: center; color: var(--muted); border: 1px dashed var(--border); border-radius: 12px; grid-column: 1/-1; }
+  .foot { margin-top: 18px; color: var(--muted); font-size: 12px; }
+  .notice { padding: 11px 13px; border-radius: 10px; background: var(--soft); color: var(--muted); margin: 12px 0; font-size: 13px; }
+  @media (max-width: 760px) { .summary { grid-template-columns: 1fr; gap: 8px; } .stat { padding: 12px 14px; } .stat .number { font-size: 24px; } .list { grid-template-columns: 1fr; } .toolbar { align-items: stretch; } .tabs { flex: 1; } .tab { flex: 1; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="eyebrow">Board game session log</div>
+    <h1>Fromage + Formaggio</h1>
+    <p class="intro">Track every way to combine four of the eight quadrants. Each chosen quadrant can be Side 1 or Side 2, and each setup is tracked separately for 2, 3, and 4 players.</p>
+  </header>
+  <main>
+    <section class="summary" aria-label="Overall progress">
+      <div class="stat"><div class="number" id="overallCount">0 / 3,360</div><div class="label">All setups completed</div><div class="progress-track"><div class="progress-fill" id="overallBar"></div></div></div>
+      <div class="stat"><div class="number" id="currentCount">0 / 1,120</div><div class="label" id="currentLabel">2-player setups completed</div><div class="progress-track"><div class="progress-fill" id="currentBar"></div></div></div>
+      <div class="stat"><div class="number" id="remainingCount">1,120</div><div class="label" id="remainingLabel">2-player setups remaining</div></div>
+    </section>
+    <div class="toolbar">
+      <div class="tabs" role="tablist" aria-label="Player count">
+        <button class="tab" role="tab" data-players="2" aria-selected="true">2 Players</button>
+        <button class="tab" role="tab" data-players="3" aria-selected="false">3 Players</button>
+        <button class="tab" role="tab" data-players="4" aria-selected="false">4 Players</button>
+      </div>
+      <input class="search" id="search" type="search" placeholder="Search quadrants or side…" aria-label="Search combinations">
+      <label class="filter"><input id="unfinishedOnly" type="checkbox"> Unfinished only</label>
+    </div>
+    <div class="toolbar">
+      <button id="markVisible">Mark visible as done</button>
+      <button id="clearVisible">Uncheck visible</button>
+      <button id="exportProgress">Export progress</button>
+      <button id="importProgress">Import progress</button>
+      <button id="resetAll">Reset all</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+    <div class="notice" id="storageNotice">Progress is saved in this browser when local storage is available. Use “Export progress” occasionally as a backup, or to move progress to another browser.</div>
+    <div class="section-heading"><h2 id="listTitle">2-player combinations</h2><div class="small" id="visibleCount">Showing 1,120 setups</div></div>
+    <div class="list" id="combinationList"></div>
+    <p class="foot">Combination order is systematic, not a recommended play order. This tracker treats the two sides of every quadrant as available for every player count.</p>
+  </main>
+</div>
+<script>
+(() => {
+  const quadrants = ['Festival', 'Fromagerie', 'Bistro', 'Villes', 'Banca', 'Vigneto', 'Venezia', 'Regioni'];
+  const STORAGE_KEY = 'fromageFormaggioTracker_v1';
+  let currentPlayers = 2;
+  let progress = loadProgress();
+  const combinations = [];
+  let id = 0;
+  function choose(start, picked) {
+    if (picked.length === 4) {
+      for (let mask = 0; mask < 16; mask++) {
+        const sides = picked.map((_, i) => ((mask >> (3 - i)) & 1) + 1);
+        const label = picked.map((q, i) => `${q} Side ${sides[i]}`).join(', ');
+        combinations.push({ id: String(id++), quadrants: picked.slice(), sides, label });
+      }
+      return;
+    }
+    for (let i = start; i < quadrants.length; i++) choose(i + 1, [...picked, quadrants[i]]);
+  }
+  choose(0, []);
+  const byPlayers = {2: combinations, 3: combinations, 4: combinations};
+  function loadProgress() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+    catch (_) { return {}; }
+  }
+  function saveProgress() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+      document.getElementById('storageNotice').textContent = 'Progress is saved in this browser. Export a backup if you want to move it or keep a copy.';
+    } catch (_) {
+      document.getElementById('storageNotice').textContent = 'This browser session may not allow persistent storage. Use “Export progress” to save a backup file.';
+    }
+  }
+  function isDone(players, combo) { return progress[players + ':' + combo.id] === true; }
+  function countDone(players) { return combinations.reduce((n, c) => n + (isDone(players, c) ? 1 : 0), 0); }
+  function updateSummary() {
+    const allDone = countDone(2) + countDone(3) + countDone(4);
+    const currentDone = countDone(currentPlayers);
+    document.getElementById('overallCount').textContent = `${allDone.toLocaleString()} / 3,360`;
+    document.getElementById('overallBar').style.width = (allDone / 3360 * 100) + '%';
+    document.getElementById('currentCount').textContent = `${currentDone.toLocaleString()} / 1,120`;
+    document.getElementById('currentLabel').textContent = `${currentPlayers}-player setups completed`;
+    document.getElementById('currentBar').style.width = (currentDone / 1120 * 100) + '%';
+    document.getElementById('remainingCount').textContent = (1120 - currentDone).toLocaleString();
+    document.getElementById('remainingLabel').textContent = `${currentPlayers}-player setups remaining`;
+  }
+  function render() {
+    updateSummary();
+    document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(Number(b.dataset.players) === currentPlayers)));
+    document.getElementById('listTitle').textContent = `${currentPlayers}-player combinations`;
+    const query = document.getElementById('search').value.trim().toLowerCase();
+    const unfinishedOnly = document.getElementById('unfinishedOnly').checked;
+    const list = document.getElementById('combinationList');
+    const fragment = document.createDocumentFragment();
+    let shown = 0;
+    combinations.forEach(combo => {
+      const done = isDone(currentPlayers, combo);
+      if (unfinishedOnly && done) return;
+      if (query && !combo.label.toLowerCase().includes(query)) return;
+      shown++;
+      const row = document.createElement('label');
+      row.className = 'item' + (done ? ' done' : '');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = done;
+      checkbox.setAttribute('aria-label', `Mark ${combo.label} ${done ? 'unfinished' : 'completed'}`);
+      checkbox.addEventListener('change', () => {
+        const key = currentPlayers + ':' + combo.id;
+        if (checkbox.checked) progress[key] = true;
+        else delete progress[key];
+        saveProgress();
+        render();
+      });
+      const main = document.createElement('span');
+      main.className = 'item-main';
+      const title = document.createElement('span');
+      title.className = 'item-title';
+      title.textContent = combo.label;
+      main.appendChild(title);
+      row.append(checkbox, main);
+      fragment.appendChild(row);
+    });
+    list.replaceChildren(fragment);
+    document.getElementById('visibleCount').textContent = `Showing ${shown.toLocaleString()} of 1,120 setups`;
+    if (!shown) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'No combinations match. Try changing the search or unfinished filter.';
+      list.appendChild(empty);
+    }
+  }
+  document.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => { currentPlayers = Number(button.dataset.players); render(); }));
+  document.getElementById('search').addEventListener('input', render);
+  document.getElementById('unfinishedOnly').addEventListener('change', render);
+  document.getElementById('markVisible').addEventListener('click', () => {
+    const query = document.getElementById('search').value.trim().toLowerCase();
+    const unfinishedOnly = document.getElementById('unfinishedOnly').checked;
+    combinations.forEach(combo => {
+      const done = isDone(currentPlayers, combo);
+      if ((!unfinishedOnly || !done) && (!query || combo.label.toLowerCase().includes(query))) progress[currentPlayers + ':' + combo.id] = true;
+    });
+    saveProgress(); render();
+  });
+  document.getElementById('clearVisible').addEventListener('click', () => {
+    const query = document.getElementById('search').value.trim().toLowerCase();
+    combinations.forEach(combo => { if (!query || combo.label.toLowerCase().includes(query)) delete progress[currentPlayers + ':' + combo.id]; });
+    saveProgress(); render();
+  });
+  document.getElementById('exportProgress').addEventListener('click', () => {
+    const data = { app: 'Fromage + Formaggio Tracker', version: 1, exportedAt: new Date().toISOString(), completed: Object.keys(progress).filter(k => progress[k] === true) };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'fromage-formaggio-progress.json'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  const importFile = document.getElementById('importFile');
+  document.getElementById('importProgress').addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', async () => {
+    const file = importFile.files && importFile.files[0]; if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!data || !Array.isArray(data.completed)) throw new Error('Invalid backup');
+      if (!confirm('Import this backup and merge it with the progress currently in this browser?')) { importFile.value = ''; return; }
+      data.completed.forEach(key => { if (/^[234]:\d+$/.test(key)) progress[key] = true; });
+      saveProgress(); render(); alert('Progress imported.');
+    } catch (_) { alert('That file does not look like a valid tracker progress backup.'); }
+    importFile.value = '';
+  });
+  document.getElementById('resetAll').addEventListener('click', () => {
+    if (confirm('Reset all progress for all three player counts? This cannot be undone unless you exported a backup.')) { progress = {}; saveProgress(); render(); }
+  });
+  render();
+})();
+</script>
+</body>
+</html>
